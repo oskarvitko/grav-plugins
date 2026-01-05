@@ -1,0 +1,210 @@
+title: 'Product'
+description: 'Product'
+type: flex-objects
+
+# Flex Configuration
+config:
+    # Administration Configuration
+    admin:
+        # Admin router (optional)
+        router:
+            path: '/product'
+
+        # Admin menu (optional)
+        menu:
+            list:
+                route: '/product'
+                title: 'Каталог'
+                icon: fa-shop
+                # Authorization to collection admin
+                authorize: ['admin.product.list', 'admin.super']
+                # Priority -10 .. 10 (highest goes up)
+                priority: 2
+
+        # Admin template type / folder
+        template: default
+
+        # Permissions
+        permissions:
+            # Primary permissions
+            admin.product:
+                type: crudpl
+                label: 'Product'
+
+        list:
+            title: name
+            fields:
+                name:
+                    link: edit
+
+        edit:
+            title:
+                template: ''
+
+        preview:
+            enabled: false
+            route:
+            #template: '/plugins/flex-objects/directory:contacts'
+
+
+    # Site Configuration
+    site:
+        templates:
+            collection:
+                # Lookup for the template layout files for collections of objects
+                paths:
+                    - 'flex/{TYPE}/collection/{LAYOUT}{EXT}'
+            object:
+                # Lookup for the template layout files for objects
+                paths:
+                    - 'flex/{TYPE}/object/{LAYOUT}{EXT}'
+            defaults:
+                # Default template {TYPE}; overridden by filename of this blueprint if template folder exists
+                type: 'product'
+                # Default template {LAYOUT}; can be overridden in render calls (usually Twig in templates)
+                layout: default
+
+    # Data Configuration
+    data:
+        # Object class to be used, allowing custom methods for the object
+        object: 'Grav\Plugin\ProductCatalog\Flex\Types\Product\ProductObject'
+        # Collection class to be used, allowing custom methods for the collections
+        collection: 'Grav\Plugin\ProductCatalog\Flex\Types\Product\ProductCollection'
+        # Index class to be used, works as a quick database-like lookup index
+        index: 'Grav\Common\Flex\Types\Generic\GenericIndex'
+        storage:
+            # Storage class, use single file storage (does not support images and assets)
+            class: 'Grav\Framework\Flex\Storage\SimpleStorage'
+            options:
+                formatter:
+                    # File formatter class, in this case the file is stored in markdown
+                    class: 'Grav\Framework\File\Formatter\JsonFormatter'
+                # JSON file where all the objects will be stored
+                folder: user-data://product
+        search:
+            # Search options
+            options:
+                contains: 1
+            # Fields to be searched
+            fields:
+                - name
+                - description
+
+form:
+    validation: loose
+    fields:
+        name:
+            type: text
+            label: Название Товара
+            validate:
+                required: true
+        isBest:
+            type: toggle
+            label: Лучший товар
+            default: 0
+            options:
+                1: Да
+                0: Нет
+            validate:
+                required: true
+        preview:
+            type: file
+            label: Первью (в Карточке)
+            destination: 'user/data/images'
+            multiple: false
+            accept:
+            - image/*
+        gallery:
+            type: file
+            label: Галерея
+            destination: 'user/data/images'
+            multiple: true
+            accept:
+            - image/*
+        length:
+            type: select
+            label: Начальная Длина Теплицы
+            options:
+                "4": 4 м.
+                "6": 6 м.
+                "8": 8 м.
+                "10": 10 м.
+            default: 4
+            validate:
+                required: true
+        step:
+            type: select
+            label: Начальная Шаг между дугами
+            options:
+                "1": 1 м.
+                "0.67": 0.67 м.
+                "0.5": 0.5 м.
+            default: 1
+            validate:
+                required: true
+        width:
+            type: text
+            label: Ширина Теплицы
+            default: 2
+            validate:
+                required: true
+        profil:
+            type: select
+            label: Профиль
+            options:
+                "20x20": 20x20
+                "30x20": 30x20
+                "40x20": 40x20
+                "40x40": 40x40
+            default: 20x20
+            validate:
+                required: true
+        waranty:
+            type: number
+            label: Гарантия (мес.)
+            min: 1
+            max: 100
+            step: 1
+            default: 12
+            validate:
+                required: true
+        description:
+            type: markdown
+            label: Описание товара
+            size: large
+            validate:
+                required: true
+        variants:
+            name: variants
+            type: list
+            style: vertical
+            label: Ценовые варианты (Калькулятор)
+            fields:
+                .length:
+                    type: select
+                    label: Длина Теплицы
+                    options:
+                        "4": 4 м.
+                        "6": 6 м.
+                        "8": 8 м.
+                        "10": 10 м.
+                    default: 4
+                .value:
+                    type: list
+                    style: vertical
+                    label: Цены
+                    fields:
+                        .step:
+                            type: select
+                            label: Шаг между дугами
+                            options:
+                                "1": 1 м.
+                                "0.67": 0.67 м.
+                                "0.5": 0.5 м.
+                            default: 1
+                        .price:
+                            type: number
+                            label: Цена
+                            min: 0
+                            step: 50
+                            default: 500

@@ -1,0 +1,25 @@
+{
+  "name": "oskar/product-catalog",
+  "type": "grav-plugin",
+  "description": "Product Catalog",
+  "version": "1.0.0",
+  "keywords": ["plugin"],
+  "homepage": "https://github.com/oskar/grav-plugin-product-catalog",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "oskar",
+      "email": "oskarvitko16@gmail.com",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=7.1.3"
+  },
+  "autoload": {
+    "psr-4": {
+      "Grav\\Plugin\\ProductCatalog\\": "classes/"
+    },
+    "classmap":  ["product-catalog.php"]
+  }
+}

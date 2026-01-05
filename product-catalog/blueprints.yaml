@@ -1,0 +1,58 @@
+name: Product Catalog
+slug: product-catalog
+type: plugin
+version: 0.1.0
+description: Product Catalog
+icon: plug
+author:
+  name: oskar
+  email: oskarvitko16@gmail.com
+homepage: https://github.com/oskar/grav-plugin-product-catalog
+demo: http://demo.yoursite.com
+keywords: grav, plugin, etc
+bugs: https://github.com/oskar/grav-plugin-product-catalog/issues
+docs: https://github.com/oskar/grav-plugin-product-catalog/blob/develop/README.md
+license: MIT
+
+dependencies:
+  - { name: grav, version: '>=1.6.0' }
+
+form:
+  validation: loose
+  fields:
+    enabled:
+      type: toggle
+      label: PLUGIN_ADMIN.PLUGIN_STATUS
+      highlight: 1
+      default: 0
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
+    parent_accepted:
+        type: toggle
+        label: Родительская включена
+        highlight: 1
+        default: 0
+        options:
+          1: PLUGIN_ADMIN.ENABLED
+          0: PLUGIN_ADMIN.DISABLED
+    parent_route:
+        type: text
+        label: Родительский путь
+        default: ''
+        validate:
+          required: true
+    render_route:
+        type: text
+        label: Путь страницы Товара
+        default: ''
+        validate:
+          required: true
+    not_found_route:
+        type: text
+        label: Путь страницы 404
+        default: '/404'
+        validate:
+          required: true

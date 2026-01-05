@@ -1,0 +1,53 @@
+name: Tg Form
+slug: tg-form
+type: plugin
+version: 0.1.0
+description: Send form data to the telegram chat
+icon: plug
+author:
+  name: oskar
+  email: oskarvitko16@gmail.com
+keywords: grav, plugin, etc
+license: MIT
+
+dependencies:
+  - { name: grav, version: '>=1.6.0' }
+
+form:
+  validation: loose
+  fields:
+    enabled:
+      type: toggle
+      label: PLUGIN_ADMIN.PLUGIN_STATUS
+      highlight: 1
+      default: 0
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
+    title:
+      type: text
+      label: Request Title
+      validate:
+        required: true
+    chat_id:
+      type: text
+      label: Telegram Chat ID
+      validate:
+        required: true
+    token:
+      type: text
+      label: Telegram Bot Token
+      validate:
+        required: true
+    redirect:
+      type: text
+      label: Redirect Path
+      validate:
+        required: true
+    aliases:
+      type: array
+      label: Field Aliases
+      placeholder_key: phone
+      placeholder_value: Telephone

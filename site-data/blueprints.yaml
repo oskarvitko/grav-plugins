@@ -1,0 +1,36 @@
+name: Site Data
+slug: site-data
+type: plugin
+version: 0.1.0
+description: Custom Site Data Plugin
+icon: plug
+author:
+  name: oskar
+  email: oskarvitko16@gmail.com
+demo: http://demo.yoursite.com
+keywords: grav, plugin, etc
+license: MIT
+
+dependencies:
+  - { name: grav, version: '>=1.6.0' }
+
+admin:
+    router:
+        path: '/product'
+
+form:
+  validation: loose
+  fields:
+    enabled:
+      type: toggle
+      label: PLUGIN_ADMIN.PLUGIN_STATUS
+      highlight: 1
+      default: 0
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
+    data:
+      type: array
+      label: Site Data

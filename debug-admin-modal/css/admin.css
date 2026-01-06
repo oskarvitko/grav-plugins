@@ -1,0 +1,23 @@
+.debug-admin-modal-container{
+    position: absolute;
+    z-index: 10000;
+    right: 20px;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+    max-height: 100vh;
+}
+
+.debug-admin-modal-container div:has(button) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.debug-admin-modal-container pre {
+    margin: 0;
+    min-width: 400px;
+    padding: 12px;
+}

@@ -12,6 +12,9 @@ declare(strict_types=1);
 namespace Grav\Plugin\ProductCatalog\Flex\Types\Product;
 
 use Grav\Common\Flex\Types\Generic\GenericCollection;
+use Grav\Common\Grav;
+use Grav\Common\Plugins;
+use Grav\Plugin\ProductCatalogPricesPlugin;
 
 /**
  * Class ProductCollection
@@ -21,5 +24,14 @@ use Grav\Common\Flex\Types\Generic\GenericCollection;
  */
 class ProductCollection extends GenericCollection
 {
+    public function applyPrice()
+    {
+        $this->forAll(function ($itemKey, $item) {
+            if (method_exists($item, 'applyPrice')) {
+                $item->applyPrice();
+            }
+        });
 
+        return $this;
+    }
 }

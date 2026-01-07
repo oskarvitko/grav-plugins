@@ -10,6 +10,7 @@ use Grav\Common\Twig\Twig;
 use Grav\Plugin\Admin\Admin;
 use Grav\Plugin\Admin\AdminController;
 use Grav\Plugin\FlexObjects\Flex;
+use Grav\Plugin\ProductCatalog\Flex\Types\Product\ProductCollection;
 use Grav\Plugin\ProductCatalog\Flex\Types\Product\ProductObject;
 use Monolog\Logger;
 
@@ -91,9 +92,11 @@ class ProductCatalogPlugin extends Plugin
                 /** @var Flex $flex */
                 $flex = $this->grav['flex_objects'];
                 $directory = $flex->getDirectory('product');
+                /** @var ProductCollection $collection */
+                $collection = $directory->getCollection();
 
                 /** @var ProductObject $flex */
-                $product = $directory->getObject($id);
+                $product = $collection->get($id);
 
                 if ($product) {
                     /** @var Twig $twig */

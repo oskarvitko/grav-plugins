@@ -1,0 +1,57 @@
+name: Product Catalog Prices
+slug: product-catalog-prices
+type: plugin
+version: 0.1.0
+description: Fetching Prices from API for product-catalog plugin
+icon: plug
+author:
+  name: oskar
+  email: oskarvitko16@gmail.com
+homepage: https://github.com/oskar/grav-plugin-product-catalog-prices
+demo: http://demo.yoursite.com
+keywords: grav, plugin, etc
+bugs: https://github.com/oskar/grav-plugin-product-catalog-prices/issues
+docs: https://github.com/oskar/grav-plugin-product-catalog-prices/blob/develop/README.md
+license: MIT
+
+dependencies:
+  - { name: grav, version: '>=1.6.0' }
+
+form:
+  validation: loose
+  fields:
+    enabled:
+      type: toggle
+      label: PLUGIN_ADMIN.PLUGIN_STATUS
+      highlight: 1
+      default: 0
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
+    api_url:
+      type: text
+      label: API URL
+      placeholder: https://someurl.com/api
+      validate:
+        required: true
+    cache_time:
+      type: number
+      min: 0
+      label: Cache time
+      prepend: min
+    collections:
+      type: list
+      style: vertical
+      label: Collections
+      fields:
+          .collection:
+              type: text
+              label: Collection name
+              placeholder: product
+          .paths:
+              type: array
+              label: Propery path
+              placeholder_value: price_rb
+              placeholder_key: versions.value.price

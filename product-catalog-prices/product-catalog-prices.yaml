@@ -1,0 +1,7 @@
+enabled: true
+cache_time: 120
+collections:
+  -
+    collection: product
+    paths:
+      variants.value.price: price_rb

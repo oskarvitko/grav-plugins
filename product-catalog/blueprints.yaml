@@ -1,7 +1,7 @@
 name: Product Catalog
 slug: product-catalog
 type: plugin
-version: 0.1.0
+version: 0.2.0
 description: Product Catalog
 icon: plug
 author:
@@ -30,29 +30,105 @@ form:
         0: PLUGIN_ADMIN.DISABLED
       validate:
         type: bool
-    parent_accepted:
-        type: toggle
-        label: Родительская включена
-        highlight: 1
-        default: 0
-        options:
-          1: PLUGIN_ADMIN.ENABLED
-          0: PLUGIN_ADMIN.DISABLED
-    parent_route:
-        type: text
-        label: Родительский путь
-        default: ''
-        validate:
-          required: true
-    render_route:
-        type: text
-        label: Путь страницы Товара
-        default: ''
-        validate:
-          required: true
-    not_found_route:
-        type: text
-        label: Путь страницы 404
-        default: '/404'
-        validate:
-          required: true
+    product:
+        type: section
+        title: Товары
+        underline: true
+        fields:
+            product_parent_accepted:
+                type: toggle
+                label: Родительская включена
+                highlight: 1
+                default: 0
+                options:
+                  1: PLUGIN_ADMIN.ENABLED
+                  0: PLUGIN_ADMIN.DISABLED
+            product_parent_route:
+                type: text
+                label: Родительский путь
+                default: ''
+                validate:
+                  required: true
+            product_render_route:
+                type: text
+                label: Путь страницы Товара
+                default: ''
+                validate:
+                  required: true
+            product_not_found_route:
+                type: text
+                label: Путь страницы 404
+                default: ''
+                validate:
+                  required: false
+    category:
+        type: section
+        title: Категории
+        underline: true
+        fields:
+            category_enabled:
+                type: toggle
+                label: Категории включены
+                highlight: 1
+                default: 0
+                options:
+                  1: PLUGIN_ADMIN.ENABLED
+                  0: PLUGIN_ADMIN.DISABLED
+                validate:
+                  type: bool
+            category_parent_accepted:
+                type: toggle
+                label: Родительская включена
+                highlight: 1
+                default: 0
+                options:
+                  1: PLUGIN_ADMIN.ENABLED
+                  0: PLUGIN_ADMIN.DISABLED
+            category_parent_route:
+                type: text
+                label: Родительский путь
+                default: ''
+                validate:
+                  required: true
+            category_render_route:
+                type: text
+                label: Путь страницы Категории
+                default: ''
+                validate:
+                  required: true
+            category_not_found_route:
+                type: text
+                label: Путь страницы 404
+                default: ''
+                validate:
+                  required: false
+    extra_product:
+        type: section
+        title: Доп. Товары
+        underline: true
+        fields:
+            extra_product_enabled:
+                type: toggle
+                label: Доп. товары включены
+                highlight: 1
+                default: 0
+                options:
+                  1: PLUGIN_ADMIN.ENABLED
+                  0: PLUGIN_ADMIN.DISABLED
+                validate:
+                  type: bool
+    review:
+        type: section
+        title: Отзывы
+        underline: true
+        fields:
+            review_enabled:
+                type: toggle
+                label: Отзывы включены
+                highlight: 1
+                default: 0
+                options:
+                  1: PLUGIN_ADMIN.ENABLED
+                  0: PLUGIN_ADMIN.DISABLED
+                validate:
+                  type: bool

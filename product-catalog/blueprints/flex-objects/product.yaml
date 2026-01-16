@@ -19,7 +19,7 @@ config:
                 # Authorization to collection admin
                 authorize: ['admin.product.list', 'admin.super']
                 # Priority -10 .. 10 (highest goes up)
-                priority: 2
+                priority: 5
 
         # Admin template type / folder
         template: default
@@ -36,10 +36,16 @@ config:
             fields:
                 name:
                     link: edit
+                price:
+                discount:
+                leftCount:
+                isHit:
+                isAd:
+                published:
 
         edit:
             title:
-                template: ''
+                template: '{{ object.name ?? ''Новый товар'' }}'
 
         preview:
             enabled: false
@@ -93,18 +99,74 @@ config:
 form:
     validation: loose
     fields:
+        published:
+            type: toggle
+            label: Опубликован
+            default: 1
+            options:
+                1: Да
+                0: Нет
+            validate:
+                required: true
         name:
             type: text
             label: Название Товара
             validate:
                 required: true
-        isBest:
+        slug:
+            type: text
+            label: Название в ссылке
+            placeholder: 'teplica-mini-2-0'
+            validate:
+                required: true
+            classes: live-slug-from-name
+        meta:
+            type: array
+            label: PLUGIN_ADMIN.METADATA
+            placeholder_key: PLUGIN_ADMIN.METADATA_KEY
+            placeholder_value: PLUGIN_ADMIN.METADATA_VALUE
+        category:
+            type: select
+            label: Категории
+            multiple: true
+            size: long
+            data-options@: '\Grav\Plugin\ProductCatalogPlugin::getCategories'
+            validate:
+                type: array
+        price:
+            type: number
+            label: Цена
+            validate:
+                required: true
+        isHit:
             type: toggle
-            label: Лучший товар
+            label: Хит
             default: 0
             options:
                 1: Да
                 0: Нет
+            validate:
+                required: true
+        isAd:
+            type: toggle
+            label: На Акции
+            default: 1
+            options:
+                1: Да
+                0: Нет
+            validate:
+                required: true
+        leftCount:
+            type: number
+            label: Осталось на складе
+            default: 6
+            validate:
+                required: true
+        discount:
+            type: number
+            label: Скидка
+            default: 25
+            prepend: '%'
             validate:
                 required: true
         preview:
@@ -112,6 +174,7 @@ form:
             label: Первью (в Карточке)
             destination: 'user/data/images'
             multiple: false
+            random_name: true
             accept:
             - image/*
         gallery:
@@ -119,6 +182,7 @@ form:
             label: Галерея
             destination: 'user/data/images'
             multiple: true
+            random_name: true
             accept:
             - image/*
         length:
@@ -148,26 +212,33 @@ form:
             default: 2
             validate:
                 required: true
+        height:
+            type: text
+            label: Высота
+            default: '2.1м и 1.75м'
+            validate:
+                required: true
         profil:
             type: select
             label: Профиль
             options:
                 "20x20": 20x20
+                "20x40": 20x40
                 "30x20": 30x20
                 "40x20": 40x20
                 "40x40": 40x40
             default: 20x20
             validate:
                 required: true
-        waranty:
-            type: number
-            label: Гарантия (мес.)
-            min: 1
-            max: 100
-            step: 1
-            default: 12
-            validate:
-                required: true
+        props:
+            type: array
+            label: Параметры
+            placeholder_key: Производитель
+            placeholder_value: Беларусь
+            default:
+                Производитель: Сэлмакс Групп ПК
+                Страна производства: Беларусь
+                Гарантия: 12 месяцев
         description:
             type: markdown
             label: Описание товара
@@ -178,6 +249,7 @@ form:
             name: variants
             type: list
             style: vertical
+            collapsed: true
             label: Ценовые варианты (Калькулятор)
             fields:
                 .length:
@@ -192,6 +264,7 @@ form:
                     default: 4
                 .value:
                     type: list
+                    collapsed: true
                     style: vertical
                     label: Цены
                     fields:

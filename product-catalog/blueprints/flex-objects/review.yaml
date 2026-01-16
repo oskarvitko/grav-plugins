@@ -1,0 +1,109 @@
+title: 'Review'
+description: 'Review'
+type: flex-objects
+
+# Flex Configuration
+config:
+    # Administration Configuration
+    admin:
+        # Admin router (optional)
+        router:
+            path: '/reviews'
+
+        # Admin menu (optional)
+        menu:
+            list:
+                route: '/reviews'
+                title: 'Отзывы'
+                icon: fa-reply-all
+                # Authorization to collection admin
+                authorize: ['admin.product.list', 'admin.super']
+                # Priority -10 .. 10 (highest goes up)
+                priority: 2
+
+        # Admin template type / folder
+        template: default
+
+        # Permissions
+        permissions:
+            # Primary permissions
+            admin.product:
+                type: crudpl
+                label: 'Reviews'
+
+        list:
+            title: name
+            fields:
+                caption:
+                    link: edit
+
+        edit:
+            title:
+                template: ''
+
+        preview:
+            enabled: false
+            route:
+            #template: '/plugins/flex-objects/directory:contacts'
+
+
+    # Site Configuration
+    site:
+        templates:
+            collection:
+                # Lookup for the template layout files for collections of objects
+                paths:
+                    - 'flex/{TYPE}/collection/{LAYOUT}{EXT}'
+            object:
+                # Lookup for the template layout files for objects
+                paths:
+                    - 'flex/{TYPE}/object/{LAYOUT}{EXT}'
+            defaults:
+                # Default template {TYPE}; overridden by filename of this blueprint if template folder exists
+                type: 'review'
+                # Default template {LAYOUT}; can be overridden in render calls (usually Twig in templates)
+                layout: default
+
+    # Data Configuration
+    data:
+        # Object class to be used, allowing custom methods for the object
+        object: 'Grav\Plugin\ProductCatalog\Flex\Types\Category\CategoryObject'
+        # Collection class to be used, allowing custom methods for the collections
+        collection: 'Grav\Plugin\ProductCatalog\Flex\Types\Category\CategoryCollection'
+        # Index class to be used, works as a quick database-like lookup index
+        index: 'Grav\Common\Flex\Types\Generic\GenericIndex'
+        storage:
+            # Storage class, use single file storage (does not support images and assets)
+            class: 'Grav\Framework\Flex\Storage\SimpleStorage'
+            options:
+                formatter:
+                    # File formatter class, in this case the file is stored in markdown
+                    class: 'Grav\Framework\File\Formatter\JsonFormatter'
+                # JSON file where all the objects will be stored
+                folder: user-data://review
+        search:
+            # Search options
+            options:
+                contains: 1
+            # Fields to be searched
+            fields:
+                - name
+                - description
+
+form:
+    validation: loose
+    fields:
+        caption:
+            type: text
+            label: Подпись
+            validate:
+                required: true
+        media_file:
+            type: file
+            label: Видео или Скрин отзыва
+            destination: 'user/media/uploads'
+            multiple: false
+            random_name: true
+            accept:
+            - image/*
+            - video/*

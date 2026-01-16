@@ -2,11 +2,13 @@
 namespace Grav\Plugin;
 
 use Composer\Autoload\ClassLoader;
+use Grav\Common\Grav;
 use Grav\Common\Plugin;
 use Grav\Events\FlexRegisterEvent;
 use Grav\Common\Page\Page;
 use RocketTheme\Toolbox\Event\Event;
 use Grav\Common\Twig\Twig;
+use Grav\Framework\RequestHandler\Exception\NotFoundException;
 use Grav\Plugin\Admin\Admin;
 use Grav\Plugin\Admin\AdminController;
 use Grav\Plugin\FlexObjects\Flex;
@@ -44,6 +46,7 @@ class ProductCatalogPlugin extends Plugin
             'onPluginsInitialized' => [
                 ['onPluginsInitialized', 0]
             ],
+            'onAssetsInitialized' => ['onAssetsInitialized', 0],
             FlexRegisterEvent::class => [['onRegisterFlex', 1]],
         ];
     }
@@ -70,80 +73,174 @@ class ProductCatalogPlugin extends Plugin
         ]);
     }
 
+    public function onAssetsInitialized()
+    {
+        $this->grav['assets']->addJs('plugins://product-catalog/assets/js/live-slug.js');
+    }
+
+    protected function handleItemRouting(
+        $path,
+        $parentRoute,
+        $parentAccepted,
+        $renderRoute,
+        $notFoundRoute,
+        $collectionName,
+        $objectName
+    ) {
+        $id = substr($path, strlen($parentRoute));
+        $id = rtrim($id, '/');
+        $id = explode('/', $id);
+        $id = end($id);
+
+        $handleNotFound = function () use ($notFoundRoute) {
+            return $notFoundRoute ? $this->grav->redirect($notFoundRoute) : $this->grav->fireEvent('onPageNotFound');
+        };
+
+        if (!$id) {
+            if (!$parentAccepted) {
+                return $handleNotFound();
+            }
+        } else {
+            /** @var Flex $flex */
+            $flex = $this->grav['flex_objects'];
+            $directory = $flex->getDirectory($collectionName);
+            /** @var ProductCollection $collection */
+            $collection = $directory->getCollection();
+
+            /** @var ProductObject $flex */
+            $item = $collection->find($id, 'slug');
+            if (!$item) {
+                $item = $collection->get($id);
+            }
+
+            if ($item) {
+                /** @var Twig $twig */
+                $twig = $this->grav['twig'];
+                $twig->twig_vars[$objectName] = $item;
+                /** @var Page $found */
+                $page = $this->grav['pages']->find($renderRoute);
+                $page->header()->title = $item->getProperty('name');
+                unset($this->grav['page']);
+
+                $metadata = $item->getProperty('meta');
+
+                if ($metadata && is_array($metadata)) {
+                    $baseMetadata = $page->metadata();
+
+                    foreach ($metadata as $key => $value) {
+                        $metadata[$key] = [
+                            'name' => $key,
+                            'content' => $value
+                        ];
+                    }
+
+                    $page->metadata(array_merge($baseMetadata, $metadata));
+                }
+
+                $this->grav['page'] = $page;
+            } else {
+                return $handleNotFound();
+            }
+        }
+    }
+
+    protected function getConfig($name)
+    {
+        $config = $this->config->get('plugins.product-catalog');
+        $result = [];
+
+        foreach ($config as $key => $value) {
+            if (str_starts_with($key, $name)) {
+                $result[str_replace($name . '_', '', $key)] = $value;
+            }
+        }
+
+        return $result;
+    }
+
     public function onPageInitialized()
     {
-        $parentRoute = $this->config->get('plugins.product-catalog.parent_route');
-        $parentAccepted = $this->config->get('plugins.product-catalog.parent_accepted', 1) == 1;
-        $renderRoute = $this->config->get('plugins.product-catalog.render_route');
-        $notFoundRoute = $this->config->get('plugins.product-catalog.not_found_route', '/404');
+        $productConfig = $this->getConfig('product');
+        $categoryConfig = $this->getConfig('category');
 
         $uri = $this->grav['uri'];
         $path = $uri->path();
 
-        if (str_starts_with($path, $parentRoute)) {
-            $id = substr($path, strlen($parentRoute));
-            $id = ltrim($id, '/');
+        if ($path == $productConfig['render_route']) {
+            $this->grav->redirect($productConfig['not_found_route']);
+            return;
+        }
 
-            if (!$id) {
-                if (!$parentAccepted) {
-                    $this->grav->redirect($notFoundRoute);
-                }
-            } else {
-                /** @var Flex $flex */
-                $flex = $this->grav['flex_objects'];
-                $directory = $flex->getDirectory('product');
-                /** @var ProductCollection $collection */
-                $collection = $directory->getCollection();
+        if (str_starts_with($path, $productConfig['parent_route'])) {
+            return $this->handleItemRouting(
+                $path,
+                $productConfig['parent_route'],
+                $productConfig['parent_accepted'],
+                $productConfig['render_route'],
+                $productConfig['not_found_route'],
+                'product',
+                'product',
+            );
+        }
 
-                /** @var ProductObject $flex */
-                $product = $collection->get($id);
-
-                if ($product) {
-                    /** @var Twig $twig */
-                    $twig = $this->grav['twig'];
-                    $twig->twig_vars['product'] = $product;
-                    /** @var Page $found */
-                    $page = $this->grav['pages']->find($renderRoute);
-                    $page->header()->title = $product->getProperty('name');
-                    unset($this->grav['page']);
-                    $this->grav['page'] = $page;
-                } else {
-                    $this->grav->redirect($notFoundRoute);
-                }
+        if ($categoryConfig['enabled']) {
+            if (str_starts_with($path, $categoryConfig['parent_route'])) {
+                return $this->handleItemRouting(
+                    $path,
+                    $categoryConfig['parent_route'],
+                    $categoryConfig['parent_accepted'],
+                    $categoryConfig['render_route'],
+                    $categoryConfig['not_found_route'],
+                    'category',
+                    'category',
+                );
             }
         }
     }
 
     public function onSitemapProcessed(Event $e)
     {
-        $parentRoute = $this->config->get('plugins.product-catalog.parent_route');
-        $parentAccepted = $this->config->get('plugins.product-catalog.parent_accepted', 1) == 1;
+        $configs = [
+            ['type' => 'product', 'config' => $this->getConfig('product')],
+            ['type' => 'category', 'config' => $this->getConfig('category')],
+        ];
 
-        /** @var Flex $flex */
-        $flex = $this->grav['flex_objects'];
-        $directory = $flex->getDirectory('product');
+        $sitemap = $e['sitemap'];
 
-        /** @var ProductObject[] $products */
-        $products = $directory->getCollection();
+        foreach ($configs as $config) {
+            if (isset($config['config']['enabled']) && !$config['config']['enabled']) {
+                continue;
+            }
 
-        foreach ($products as $product) {
-            $date = date('Y-m-d', $product->getTimestamp());
-            $this->addSiteMapEntry($e, $product->getUrl(), $date, '0.8');
+            /** @var Flex $flex */
+            $flex = $this->grav['flex_objects'];
+            $directory = $flex->getDirectory($config['type']);
+
+            /** @var ProductObject[] $items */
+            $items = $directory->getCollection();
+
+            foreach ($items as $item) {
+                $date = date('Y-m-d', $item->getTimestamp());
+                $sitemap = $this->addSiteMapEntry($sitemap, $item->getUrl(), $date, '0.75');
+            }
+
+            if (!$config['config']['parent_accepted']) {
+                unset($sitemap[$config['config']['parent_route']]);
+            }
+
+            if ($config['config']['render_route'] !== $config['config']['parent_route']) {
+                unset($sitemap[$config['config']['render_route']]);
+            }
         }
 
-        if (!$parentAccepted) {
-            $sitemap = $e['sitemap'];
-            unset($sitemap[$parentRoute]);
-            $e['sitemap'] = $sitemap;
-        }
+        $e['sitemap'] = $sitemap;
     }
 
-    protected function addSiteMapEntry($event, $route, $lastmod, $priority)
+    protected function addSiteMapEntry($sitemap, $route, $lastmod, $priority)
     {
-        $sitemap = $event['sitemap'];
         $location = \Grav\Common\Utils::url($route, true);
-        $sitemap[$route] = new \Grav\Plugin\Sitemap\SitemapEntry($location, $lastmod, 'weekly', $priority);
-        $event['sitemap'] = $sitemap;
+        $sitemap[$route] = new \Grav\Plugin\Sitemap\SitemapEntry($location, $lastmod, 'daily', $priority);
+        return $sitemap;
     }
 
     protected function debug($message)
@@ -161,5 +258,43 @@ class ProductCatalogPlugin extends Plugin
             'product',
             'blueprints://flex-objects/product.yaml'
         );
+
+        if ($this->getConfig('category')['enabled']) {
+            $flex->addDirectoryType(
+                'category',
+                'blueprints://flex-objects/category.yaml'
+            );
+        }
+
+        if ($this->getConfig('extra_product')['enabled']) {
+            $flex->addDirectoryType(
+                'extra-product',
+                'blueprints://flex-objects/extra-product.yaml'
+            );
+        }
+
+        if ($this->getConfig('review')['enabled']) {
+            $flex->addDirectoryType(
+                'review',
+                'blueprints://flex-objects/review.yaml'
+            );
+        }
+    }
+
+    public static function getCategories()
+    {
+        $grav = Grav::instance();
+        /** @var Flex $flex */
+        $flex = $grav['flex_objects'];
+        $directory = $flex->getDirectory('category');
+        $categories = $directory->getCollection();
+
+        $result = [];
+
+        foreach ($categories as $category) {
+            $result[$category->getKey()] = $category->getProperty('name');
+        }
+
+        return $result;
     }
 }

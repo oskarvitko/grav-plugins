@@ -1,0 +1,127 @@
+title: 'Category'
+description: 'Category'
+type: flex-objects
+
+# Flex Configuration
+config:
+    # Administration Configuration
+    admin:
+        # Admin router (optional)
+        router:
+            path: '/categories'
+
+        # Admin menu (optional)
+        menu:
+            list:
+                route: '/categories'
+                title: 'Категории'
+                icon: fa-table-cells-large
+                # Authorization to collection admin
+                authorize: ['admin.product.list', 'admin.super']
+                # Priority -10 .. 10 (highest goes up)
+                priority: 4
+
+        # Admin template type / folder
+        template: default
+
+        # Permissions
+        permissions:
+            # Primary permissions
+            admin.product:
+                type: crudpl
+                label: 'Categories'
+
+        list:
+            title: name
+            fields:
+                name:
+                    link: edit
+                published:
+                price:
+
+        edit:
+            title:
+                template: ''
+
+        preview:
+            enabled: false
+            route:
+            #template: '/plugins/flex-objects/directory:contacts'
+
+
+    # Site Configuration
+    site:
+        templates:
+            collection:
+                # Lookup for the template layout files for collections of objects
+                paths:
+                    - 'flex/{TYPE}/collection/{LAYOUT}{EXT}'
+            object:
+                # Lookup for the template layout files for objects
+                paths:
+                    - 'flex/{TYPE}/object/{LAYOUT}{EXT}'
+            defaults:
+                # Default template {TYPE}; overridden by filename of this blueprint if template folder exists
+                type: 'category'
+                # Default template {LAYOUT}; can be overridden in render calls (usually Twig in templates)
+                layout: default
+
+    # Data Configuration
+    data:
+        # Object class to be used, allowing custom methods for the object
+        object: 'Grav\Plugin\ProductCatalog\Flex\Types\Category\CategoryObject'
+        # Collection class to be used, allowing custom methods for the collections
+        collection: 'Grav\Plugin\ProductCatalog\Flex\Types\Category\CategoryCollection'
+        # Index class to be used, works as a quick database-like lookup index
+        index: 'Grav\Common\Flex\Types\Generic\GenericIndex'
+        storage:
+            # Storage class, use single file storage (does not support images and assets)
+            class: 'Grav\Framework\Flex\Storage\SimpleStorage'
+            options:
+                formatter:
+                    # File formatter class, in this case the file is stored in markdown
+                    class: 'Grav\Framework\File\Formatter\JsonFormatter'
+                # JSON file where all the objects will be stored
+                folder: user-data://category
+        search:
+            # Search options
+            options:
+                contains: 1
+            # Fields to be searched
+            fields:
+                - name
+                - description
+
+form:
+    validation: loose
+    fields:
+        name:
+            type: text
+            label: Название Категории
+            validate:
+                required: true
+        slug:
+            type: text
+            label: Название в ссылке
+            placeholder: 'teplica-mini-2-0'
+            validate:
+                required: true
+            classes: live-slug-from-name
+        meta:
+            type: array
+            label: PLUGIN_ADMIN.METADATA
+            placeholder_key: PLUGIN_ADMIN.METADATA_KEY
+            placeholder_value: PLUGIN_ADMIN.METADATA_VALUE
+        image:
+            type: file
+            label: Картинка
+            destination: 'user/data/images'
+            multiple: false
+            random_name: true
+            accept:
+            - image/*
+        description:
+            type: textarea
+            label: Описание
+            validate:
+                required: true

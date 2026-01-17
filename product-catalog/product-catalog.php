@@ -46,7 +46,6 @@ class ProductCatalogPlugin extends Plugin
             'onPluginsInitialized' => [
                 ['onPluginsInitialized', 0]
             ],
-            'onAssetsInitialized' => ['onAssetsInitialized', 0],
             FlexRegisterEvent::class => [['onRegisterFlex', 1]],
         ];
     }
@@ -64,6 +63,10 @@ class ProductCatalogPlugin extends Plugin
     public function onPluginsInitialized(): void
     {
         if ($this->isAdmin()) {
+            $this->enable([
+                'onAssetsInitialized' => ['onAssetsInitialized', 1],
+            ]);
+
             return;
         }
 

@@ -89,6 +89,8 @@ class ProductCatalogPlugin extends Plugin
             return $this->grav->redirect($notFoundRoute);
         }
 
+        $uri = $this->grav['uri'];
+        $path = $uri->path();
         $request = $this->grav['request'];
         $exception = new RequestException($request, 'Page Not Found', 404);
 
@@ -97,7 +99,7 @@ class ProductCatalogPlugin extends Plugin
             'code' => $exception->getCode(),
             'message' => $exception->getMessage(),
             'exception' => $exception,
-            'route' => '/asd',
+            'route' => $path,
             'request' => $request
         ]);
 

@@ -8,7 +8,9 @@ use Grav\Events\FlexRegisterEvent;
 use Grav\Common\Page\Page;
 use RocketTheme\Toolbox\Event\Event;
 use Grav\Common\Twig\Twig;
+use Grav\Events\PageEvent;
 use Grav\Framework\RequestHandler\Exception\NotFoundException;
+use Grav\Framework\RequestHandler\Exception\RequestException;
 use Grav\Plugin\Admin\Admin;
 use Grav\Plugin\Admin\AdminController;
 use Grav\Plugin\FlexObjects\Flex;
@@ -64,7 +66,7 @@ class ProductCatalogPlugin extends Plugin
     {
         if ($this->isAdmin()) {
             $this->enable([
-                'onAssetsInitialized' => ['onAssetsInitialized', 1],
+                'onAssetsInitialized' => ['onAssetsInitialized', 0],
             ]);
 
             return;
@@ -81,6 +83,32 @@ class ProductCatalogPlugin extends Plugin
         $this->grav['assets']->addJs('plugins://product-catalog/assets/js/live-slug.js');
     }
 
+    protected function handleNotFound($notFoundRoute)
+    {
+        if ($notFoundRoute) {
+            return $this->grav->redirect($notFoundRoute);
+        }
+
+        $request = $this->grav['request'];
+        $exception = new RequestException($request, 'Page Not Found', 404);
+
+        $event = new PageEvent([
+            'page' => null,
+            'code' => $exception->getCode(),
+            'message' => $exception->getMessage(),
+            'exception' => $exception,
+            'route' => '/asd',
+            'request' => $request
+        ]);
+
+        $this->grav->fireEvent('onPageNotFound', $event);
+
+        if (isset($event->page)) {
+            unset($this->grav['page']);
+            $this->grav['page'] = $event->page;
+        }
+    }
+
     protected function handleItemRouting(
         $path,
         $parentRoute,
@@ -95,13 +123,9 @@ class ProductCatalogPlugin extends Plugin
         $id = explode('/', $id);
         $id = end($id);
 
-        $handleNotFound = function () use ($notFoundRoute) {
-            return $notFoundRoute ? $this->grav->redirect($notFoundRoute) : $this->grav->fireEvent('onPageNotFound');
-        };
-
         if (!$id) {
             if (!$parentAccepted) {
-                return $handleNotFound();
+                return $this->handleNotFound($notFoundRoute);
             }
         } else {
             /** @var Flex $flex */
@@ -142,7 +166,7 @@ class ProductCatalogPlugin extends Plugin
 
                 $this->grav['page'] = $page;
             } else {
-                return $handleNotFound();
+                return $this->handleNotFound($notFoundRoute);
             }
         }
     }
@@ -168,10 +192,8 @@ class ProductCatalogPlugin extends Plugin
 
         $uri = $this->grav['uri'];
         $path = $uri->path();
-
-        if ($path == $productConfig['render_route']) {
-            $this->grav->redirect($productConfig['not_found_route']);
-            return;
+        if ($path === $productConfig['render_route']) {
+            return $this->handleNotFound($productConfig['not_found_route']);
         }
 
         if (str_starts_with($path, $productConfig['parent_route'])) {

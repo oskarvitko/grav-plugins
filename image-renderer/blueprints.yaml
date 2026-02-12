@@ -1,0 +1,41 @@
+name: Image Renderer
+slug: image-renderer
+type: plugin
+version: 0.1.0
+description: Plugin to render images
+icon: image
+author:
+  name: oskar
+  email: oskarvitko16@gmail.com
+homepage: https://github.com/oskar/grav-plugin-image-renderer
+demo: http://demo.yoursite.com
+keywords: grav, plugin, etc
+bugs: https://github.com/oskar/grav-plugin-image-renderer/issues
+docs: https://github.com/oskar/grav-plugin-image-renderer/blob/develop/README.md
+license: MIT
+
+dependencies:
+  - { name: grav, version: '>=1.6.0' }
+
+form:
+  validation: loose
+  fields:
+    enabled:
+      type: toggle
+      label: PLUGIN_ADMIN.PLUGIN_STATUS
+      highlight: 1
+      default: 0
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
+    loading:
+      type: select
+      label: Default loading
+      default: eager
+      options:
+        eager: default
+        lazy: lazy
+        lazy-intersected: 'intersected lazy'
+        auto: auto

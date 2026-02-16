@@ -31,8 +31,90 @@ class ImageRendererPlugin extends Plugin
     {
         return [
             'onTwigSiteVariables' => ['onTwigSiteVariables', 0],
-            'onAssetsInitialized' => ['onAssetsInitialized', 0],
+            'onFlexObjectBeforeSave' => ['onFlexObjectBeforeSave', 0],
         ];
+    }
+
+    protected function getImageToGenerate($fields, $path = '', $result = [])
+    {
+        foreach ($fields as $propName => $propConfig) {
+            if (is_array($propConfig)) {
+                if (array_key_exists('type', $propConfig)) {
+                    if ($propConfig['type'] === 'file') {
+                        if (array_key_exists('generate_params', $propConfig)) {
+                            $result[$path . $propName] = $propConfig['generate_params'];
+                        }
+                    }
+                }
+
+                if (array_key_exists('fields', $propConfig)) {
+                    $this->getImageToGenerate($propConfig['fields'], $propName . '.', $result);
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    public function onFlexObjectBeforeSave($event)
+    {
+        /** @var FlexObject $object */
+        $object = $event['object'];
+
+        $blueprint = $event['directory']->getBlueprint();
+        $form = $blueprint['form'];
+
+        $media = [];
+
+        if (isset($form) && array_key_exists('fields', $form)) {
+            $result = $this->getImageToGenerate($form['fields']);
+
+            foreach ($result as $propPath => $generateParams) {
+                $files = $object->getNestedProperty($propPath);
+
+                $isGenerationEnabled = count($generateParams) > 0;
+
+                if ($isGenerationEnabled) {
+                    $media[$propPath] = [];
+                }
+
+                foreach ($files as $filePath => $file) {
+                    $fileSpec = $this->getFileSpec($file);
+
+                    if ($isGenerationEnabled) {
+                        $media[$propPath][$filePath] = [
+                            'original' => [
+                                'url' => "/" . $file['path'],
+                                'width' => $fileSpec['width'],
+                                'height' => $fileSpec['height']
+                            ]
+                        ];
+                    }
+
+                    foreach ($generateParams as $resultName => $param) {
+                        $image = $this->create_image_from_spec($fileSpec);
+
+                        foreach ($param as $operation => $operationArgs) {
+                            $image->__call($operation, $operationArgs);
+                        }
+
+                        $url = $image->url();
+
+                        [$width, $height] = getimagesize($this->grav['locator']->base . $url);
+
+                        $media[$propPath][$filePath][$resultName] = [
+                            'url' => $url,
+                            'width' => $width,
+                            'height' => $height
+                        ];
+                    }
+                }
+            }
+        }
+
+        if (count($media)) {
+            $object->setProperty('image_media', $media);
+        }
     }
 
     /**
@@ -45,14 +127,6 @@ class ImageRendererPlugin extends Plugin
         return require __DIR__ . '/vendor/autoload.php';
     }
 
-    public function onAssetsInitialized()
-    {
-        // $config = $this->config->get('plugins.image-renderer');
-        // if ($config['loading'] === 'lazy-intersected') {
-
-        // }
-    }
-
     protected function initJs()
     {
         if (!$this->jsAdded) {
@@ -60,34 +134,59 @@ class ImageRendererPlugin extends Plugin
         }
     }
 
-    public function create_image($file)
+    protected function getFileSpec($file)
+    {
+        return $this->getFilePathSpec($file['path']);
+    }
+
+    protected function getFilePathSpec($path)
     {
         $absolutePath = $this->grav['locator']->findResource(
-            $file['path'],
+            $path,
             true
         );
 
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $absolutePath);
+
         [$width, $height] = getimagesize($absolutePath);
 
-        $items = [
+        return [
             "type" => "image",
             "thumb" => "media/thumb-jpg.png",
-            "mime" => $file['type'],
+            "mime" => $mimeType,
             "image" => [],
             "filepath" => $absolutePath,
-            "filename" => $file['name'],
+            "filename" => pathinfo($absolutePath, PATHINFO_FILENAME),
             "basename" => pathinfo($absolutePath, PATHINFO_FILENAME),
             "extension" => pathinfo($absolutePath, PATHINFO_EXTENSION),
             "path" => pathinfo($absolutePath, PATHINFO_DIRNAME),
-            "modified" => 1770731099,
+            "modified" => filemtime($absolutePath),
             "thumbnails" => [],
-            "size" => $file['size'],
+            "size" => filesize($absolutePath),
             "debug" => false,
             "width" => $width,
             "height" => $height,
         ];
+    }
 
-        return new ImageMedium($items);
+    protected function create_image_from_spec($fileSpec)
+    {
+        return new ImageMedium($fileSpec);
+    }
+
+    public function create_image_from_path($path)
+    {
+        $fileSpec = $this->getFilePathSpec($path);
+
+        return $this->create_image_from_spec($fileSpec);
+    }
+
+    public function create_image($file)
+    {
+        $fileSpec = $this->getFileSpec($file);
+
+        return $this->create_image_from_spec($fileSpec);
     }
 
 
@@ -164,6 +263,10 @@ class ImageRendererPlugin extends Plugin
 
     public function onTwigSiteVariables(): void
     {
+        if ($this->isAdmin()) {
+            return;
+        }
+
         /** @var Twig $twig */
         $twig = $this->grav['twig'];
 
@@ -172,6 +275,9 @@ class ImageRendererPlugin extends Plugin
         );
         $twig->twig()->addFunction(
             new Twig_SimpleFunction('create_image', [$this, 'create_image'])
+        );
+        $twig->twig()->addFunction(
+            new Twig_SimpleFunction('create_image_from_path', [$this, 'create_image_from_path'])
         );
     }
 }

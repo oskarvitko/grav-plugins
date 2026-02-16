@@ -95,7 +95,7 @@ class ImageRendererPlugin extends Plugin
                         $image = $this->create_image_from_spec($fileSpec);
 
                         foreach ($param as $operation => $operationArgs) {
-                            $image->__call($operation, $operationArgs);
+                            $image->{$operation}(...$operationArgs);
                         }
 
                         $url = $image->url();

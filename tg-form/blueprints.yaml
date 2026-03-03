@@ -41,6 +41,13 @@ form:
       label: Telegram Bot Token
       validate:
         required: true
+    cache_text:
+      type: text
+      label: Текст при повторной отправке
+    cache_time:
+      type: number
+      label: Время блокировки
+      prepend: мин.
     redirect:
       type: text
       label: Redirect Path

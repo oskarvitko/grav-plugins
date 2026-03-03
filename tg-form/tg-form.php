@@ -51,15 +51,59 @@ class TgFormPlugin extends Plugin
         ]);
     }
 
+    protected function setRef($ref)
+    {
+        $days = 30;
+        setcookie(
+            'source_ref',
+            $ref,
+            [
+                'expires' => time() + 86400 * $days,
+                'path' => '/',
+                'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+                'httponly' => true,
+                'samesite' => 'None',
+            ]
+        );
+    }
+
+    protected function getRef()
+    {
+        return $_COOKIE['source_ref'] ?? null;
+    }
+
     public function onPageInitialized(Event $e)
     {
+        $method = $this->grav['uri']->method();
+
+        if ($method === 'GET') {
+            $ref = $this->grav['uri']->query('ref');
+            if ($ref && !$this->getRef()) {
+                $this->setRef($ref);
+            }
+        }
+
+        if ($method !== 'POST') {
+            return;
+        }
+
         $post = $this->grav['uri']->post();
 
         if (!isset($post['tg_form'])) {
             return;
         }
 
+        $cache = $this->grav['cache'];
+        $sessionId = $this->grav['session']->getId();
+        $cacheKey = "tg-form-$sessionId";
 
+        if ($cache->fetch($cacheKey)) {
+            $text = $this->config->get('plugins.tg-form.cache_text');
+            $this->grav['assets']->addInlineJs("alert('$text');");
+            return;
+        }
+
+        $ref = $this->getRef();
         $title = $this->config->get('plugins.tg-form.title');
         $chatId = $this->config->get('plugins.tg-form.chat_id');
         $token = $this->config->get('plugins.tg-form.token');
@@ -75,6 +119,14 @@ class TgFormPlugin extends Plugin
 
 
             $valueKey = isset($aliases[$key]) ? $aliases[$key] : $key;
+            $valueKey = urldecode($valueKey);
+
+            if (is_array($value)) {
+                $value = join(', ', $value);
+            }
+
+            $value = urldecode($value);
+
             array_push($fields, "<b>$valueKey:</b> $value");
         }
 
@@ -84,6 +136,10 @@ class TgFormPlugin extends Plugin
 
         if ($title) {
             array_unshift($fields, "<b>$title</b>");
+        }
+
+        if ($ref) {
+            array_push($fields, "<b>Источник</b>: $ref");
         }
 
         $message = implode("\n", $fields);
@@ -103,6 +159,9 @@ class TgFormPlugin extends Plugin
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_exec($ch);
         curl_close($ch);
+
+        $cacheTime = $this->config->get('plugins.tg-form.cache_time');
+        $cache->save($cacheKey, true, $cacheTime * 60);
 
         $this->grav->redirect($redirectPath ?? $this->grav['uri']->path());
     }

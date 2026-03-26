@@ -1,0 +1,228 @@
+{% set filters = {
+    product_type: grav.uri.query('status') ?: 'teplica',
+    search: grav.uri.query('search') ?: '',
+    sort_key: grav.uri.query('sort_key') ?: directory_config.order.by,
+    sort_dir: grav.uri.query('sort_dir') ?: directory_config.order.dir,
+	page: grav.uri.query('page')|int ?: 1,
+} %}
+
+
+{% set filtered_collection = collection
+	.byType(filters.product_type)
+	.filterBy({ name: { icontains: filters.search } })
+	.sort({ (filters.sort_key): filters.sort_dir })
+%}
+
+{% set PAGE_SIZE = 20 %}
+{% set total = filtered_collection|length %}
+{% set offset = (filters.page - 1) * PAGE_SIZE %}
+
+{% set paginated = filtered_collection.limit(offset, PAGE_SIZE) %}
+
+{# VIEW #}
+
+{% macro render_cell(entry, key, field) %}
+	{% set value = entry.getProperty(key) %}
+
+	{% if field.link %}
+		<a href="{{ grav.uri.currentRoute().withAddedPath(entry.key).uri()|string }}">{{ value }}</a>
+	{% elseif field.field.type == 'toggle' or field.field.type == 'boolean' %}
+		{% if value %}
+			<i class="published fa fa-check-circle"></i>
+		{% else %}
+			<i class="unpublished fa fa-times-circle"></i>
+		{% endif %}
+	{% else %}
+		{{ value }}
+	{% endif %}
+{% endmacro %}
+
+{% import _self as macros %}
+
+<style>
+	.dir-filters {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		padding: 0.5rem 1rem;
+		flex-wrap: wrap;
+	}
+	.dir-filters-select {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+	}
+	.dir-filters-search {
+		display: flex;
+		gap: 1rem;
+
+		div {
+			flex-grow: 1;
+			position: relative;
+
+			input: {
+				width: 100%;
+				height: 100%;
+			}
+
+			& > i {
+				position: absolute;
+				right: 6px;
+				top: 50%;
+				transform: translateY(-50%);
+				cursor: pointer;
+			}
+		}
+	}
+
+	.dir-table {
+		width: 100%;
+		table-layout: fixed;
+		border-collapse: collapse;
+		display: table;
+	}
+
+	.dir-table-column {
+		cursor: pointer;
+
+		&:hover {
+			color: #2185d0;
+		}
+	}
+
+	.dir-table-pagination {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		background: #fcfcfc;
+		border-top: 1px solid #f2f2f2;
+		padding: 0.5rem 1rem 0;
+		justify-content: space-between;
+	}
+
+	.dir-table-pagination-buttons {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.dir-table-pagination-button {
+		border-radius: 4px;
+		padding: 0.5rem 1rem;
+		color: #414147;
+
+		&.active {
+			color: #ffffff;
+			background: #0090D9;
+		}
+	}
+</style>
+
+ <script>
+    function dirTableSortChange(key, dir) {
+        const searchParams = new URLSearchParams(window.location.search)
+        searchParams.set('sort_key', key)
+        searchParams.set('sort_dir', dir)
+        window.location.search = searchParams.toString()
+    }
+
+	function dirTableClearSearch() {
+		const searchParams = new URLSearchParams(window.location.search)
+        searchParams.delete('search')
+        window.location.search = searchParams.toString()
+	}
+</script>
+
+<div class="dir-filters">
+	{% if view_config.entry_types is defined %}
+		<form method="get" class="dir-filters-select">
+			<label for="filter-product-type" style="white-space: nowrap;">Тип товара</label>
+
+			<select id="filter-product-type" name="status" onchange="this.form.submit()">
+				{% for key, label in view_config.entry_types %}
+					<option value="{{ key }}" {{ filters.product_type == key ? 'selected' : '' }}>{{ label }}</option>
+				{% endfor %}
+			</select>
+		</form>
+	{% endif %}
+
+	<form method="get">
+		<div class="form-input-wrapper dir-filters-search">
+			<div>
+				<input value="{{ filters.search }}" name="search" type="text" placeholder="Поиск">
+				{% if filters.search %}
+					<i class="fa fa-close" onclick="dirTableClearSearch()"></i>
+				{% endif %}
+			</div>
+			<button type="submit" id="titlebar-button-add" class="button">
+				<i class="fa fa-search"></i>
+				Поиск
+			</button>
+		</div>
+	</form>
+</div>
+
+<table id="directory" class="dir-table" style="width: 100%">
+	<thead>
+		<tr>
+			{% for key, field in fields %}
+				{% set isSorted = key == filters.sort_key %}
+				{% set isCurrentDesc = filters.sort_dir == 'desc' %}
+				{% set nextSortDir = isSorted ? isCurrentDesc ? 'asc' : 'desc' : 'desc' %}
+
+				<th class="dir-table-column" width="{{ field['column-width'] ?: 'auto' }}" onclick="dirTableSortChange('{{ key }}', '{{ nextSortDir }}')">
+					<span>{{ field.field.label }}</span>
+					{% if isSorted %}
+						<i class="sort-icon fa fa-fw fa-chevron-{{ isCurrentDesc ? 'down' : 'up' }}"></i>
+					{% endif %}
+				</th>
+			{% endfor %}
+			<th>&nbsp;</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for id,entry in paginated.toArray %}
+			{% set edit_link = grav.uri.currentRoute().withAddedPath(entry.key).uri()|string %}
+			{% set delete_link = grav.uri.currentRoute().withoutQueryParams().uri()|string ~ '#delete' %}
+			{% set delete_action_link = uri.addNonce(edit_link ~ '/task:delete', 'admin-form', 'admin-nonce') %}
+
+			<tr>
+				{% for key, field in fields %}
+					<td>
+						{{ macros.render_cell(entry, key, field) }}
+					</td>
+				{% endfor %}
+				<td>
+					<a href="{{ edit_link }}" title="Edit" class="edit-action">
+						<i class="fa fa-pencil"></i>
+					</a>
+					<a href="{{ delete_link }}" class="page-delete delete-action" title="Delete" data-remodal-target="delete" data-delete-url="{{ delete_action_link }}">
+						<i class="fa fa-close"></i>
+					</a>
+				</td>
+			</tr>
+		{% endfor %}
+	</tbody>
+</table>
+
+{% set totalPages = (total / PAGE_SIZE)|ceil %}
+<div class="dir-table-pagination">
+	<div class="vuetable-pagination-info" info-no-data-template="The requested query returns no result">Displaying
+		{{ offset + [1, paginated|length]|min }}
+		to
+		{{ paginated|length + offset }}
+		out of
+		{{ total }}
+		records</div>
+	<div class="dir-table-pagination-buttons">
+		{% for i in 1..totalPages %}
+			{% set query = grav.uri.query(null, true)|merge({ page: i }) %}
+			{% set link = grav.uri.route ~ '?' ~ query|url_encode %}
+			<a href="{{ link }}" class="dir-table-pagination-button {% if i == filters.page %}active{% endif %}">{{ i }}</a>
+		{% endfor %}
+	</div>
+</div>
+
+{% block modals %}
+	{% include 'flex-objects/types/default/modals/remove.html.twig' with { name: target } %}
+{% endblock %}

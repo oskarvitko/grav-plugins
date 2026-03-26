@@ -14,15 +14,11 @@ namespace Grav\Plugin\ProductCatalog\Flex\Types\Product;
 use Grav\Common\Flex\Types\Generic\GenericCollection;
 use Grav\Common\Grav;
 use Grav\Common\Plugins;
+use Grav\Plugin\ProductCatalog\Flex\Types\BaseCatalogCollection;
 use Grav\Plugin\ProductCatalogPricesPlugin;
 
-/**
- * Class ProductCollection
- * @package Grav\Common\Flex\Generic
- *
- * @extends FlexCollection<string,GenericObject>
- */
-class ProductCollection extends GenericCollection
+
+class ProductCollection extends BaseCatalogCollection
 {
     public function applyPrice()
     {
@@ -45,6 +41,10 @@ class ProductCollection extends GenericCollection
 
         $filtrateIn = function ($collection, $key, $prop) use ($filterExists, $filters) {
             if ($filterExists($key)) {
+                if (in_array('all', $filters[$key])) {
+                    return $collection;
+                }
+
                 return $collection->filter(function ($product) use ($filters, $key, $prop) {
                     $value = $product->getProperty($prop);
                     if (is_array($value)) {
@@ -72,11 +72,10 @@ class ProductCollection extends GenericCollection
             return $collection;
         };
 
-        $collection = $filtrateIn($collection, 'f_cat', 'category');
+        $collection = $filtrateIn($collection, 'f_shape', 'category');
         $collection = $filtrateIn($collection, 'f_profil', 'profil');
         $collection = $filtrateIn($collection, 'f_width', 'width');
         $collection = $filtrateIn($collection, 'f_height', 'height');
-        $collection = $filtrateIn($collection, 'f_length', 'length');
         $collection = $filtrateInRange($collection, 'f_min', 'f_max', 'price');
 
         return $collection;

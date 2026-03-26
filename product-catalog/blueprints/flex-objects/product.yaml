@@ -32,6 +32,8 @@ config:
                 label: 'Product'
 
         list:
+            entry_types:
+                teplica: Теплицы
             title: name
             fields:
                 name:
@@ -99,6 +101,12 @@ config:
 form:
     validation: loose
     fields:
+        type:
+            type: select
+            label: Тип Товара
+            default: teplica
+            options:
+                teplica: Теплицы
         published:
             type: toggle
             label: Опубликован

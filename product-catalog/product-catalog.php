@@ -67,6 +67,7 @@ class ProductCatalogPlugin extends Plugin
         if ($this->isAdmin()) {
             $this->enable([
                 'onAssetsInitialized' => ['onAssetsInitialized', 0],
+                'onAdminTwigTemplatePaths' => ['onAdminTwigTemplatePaths', 0],
             ]);
 
             return;
@@ -76,6 +77,13 @@ class ProductCatalogPlugin extends Plugin
             'onPageInitialized' => ['onPageInitialized', 0],
             'onSitemapProcessed' => ['onSitemapProcessed'],
         ]);
+    }
+
+    public function onAdminTwigTemplatePaths($event): void
+    {
+        $paths = $event['paths'];
+        $paths[] = __DIR__ . '/admin/themes/grav/templates';
+        $event['paths'] = $paths;
     }
 
     public function onAssetsInitialized()

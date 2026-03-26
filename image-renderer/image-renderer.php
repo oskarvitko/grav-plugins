@@ -15,6 +15,7 @@ use Twig_SimpleFunction;
  */
 class ImageRendererPlugin extends Plugin
 {
+    protected $queue = [];
     protected $jsAdded = false;
 
     /**
@@ -81,6 +82,10 @@ class ImageRendererPlugin extends Plugin
                 foreach ($files as $filePath => $file) {
                     $fileSpec = $this->getFileSpec($file);
 
+                    if (!$fileSpec) {
+                        continue;
+                    }
+
                     if ($isGenerationEnabled) {
                         $media[$propPath][$filePath] = [
                             'original' => [
@@ -129,7 +134,7 @@ class ImageRendererPlugin extends Plugin
 
     protected function initJs()
     {
-        if (!$this->jsAdded) {
+        if (!$this->isAdmin() && !$this->jsAdded) {
             $this->grav['assets']->addJs('plugins://image-renderer/assets/js/lazy-image.js');
         }
     }
@@ -145,6 +150,10 @@ class ImageRendererPlugin extends Plugin
             $path,
             true
         );
+
+        if (!$absolutePath) {
+            return null;
+        }
 
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($finfo, $absolutePath);
@@ -179,12 +188,20 @@ class ImageRendererPlugin extends Plugin
     {
         $fileSpec = $this->getFilePathSpec($path);
 
+        if (!$fileSpec) {
+            return null;
+        }
+
         return $this->create_image_from_spec($fileSpec);
     }
 
     public function create_image($file)
     {
         $fileSpec = $this->getFileSpec($file);
+
+        if (!$fileSpec) {
+            return null;
+        }
 
         return $this->create_image_from_spec($fileSpec);
     }
@@ -263,21 +280,19 @@ class ImageRendererPlugin extends Plugin
 
     public function onTwigSiteVariables(): void
     {
-        if ($this->isAdmin()) {
-            return;
+        if (!$this->isAdmin()) {
+            /** @var Twig $twig */
+            $twig = $this->grav['twig'];
+
+            $twig->twig()->addFunction(
+                new Twig_SimpleFunction('render_image', [$this, 'render_image'])
+            );
+            $twig->twig()->addFunction(
+                new Twig_SimpleFunction('create_image', [$this, 'create_image'])
+            );
+            $twig->twig()->addFunction(
+                new Twig_SimpleFunction('create_image_from_path', [$this, 'create_image_from_path'])
+            );
         }
-
-        /** @var Twig $twig */
-        $twig = $this->grav['twig'];
-
-        $twig->twig()->addFunction(
-            new Twig_SimpleFunction('render_image', [$this, 'render_image'])
-        );
-        $twig->twig()->addFunction(
-            new Twig_SimpleFunction('create_image', [$this, 'create_image'])
-        );
-        $twig->twig()->addFunction(
-            new Twig_SimpleFunction('create_image_from_path', [$this, 'create_image_from_path'])
-        );
     }
 }

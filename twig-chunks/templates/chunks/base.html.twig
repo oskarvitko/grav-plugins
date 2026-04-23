@@ -1,36 +1,10 @@
-<div data-chunk="{{ chunk|e('html_attr') }}">{{ fallback|default('')|raw }}</div>
- <script>
-    (function () {
-        var placeholder = document.currentScript.previousElementSibling;
-
-        var observer = new IntersectionObserver(function (entries, obs) {
-            entries.forEach(function (entry) {
-                if (!entry.isIntersecting) return;
-
-                obs.unobserve(placeholder);
-
-                var chunkName = '{{ chunk|e('js') }}';
-
-                fetch('/chunk/' + chunkName, { headers: { 'X-Chunk-Request': '1' } })
-                    .then(function (response) {
-                        if (!response.ok) throw new Error(response.status);
-                        return response.text();
-                    })
-                    .then(function (html) {
-                        placeholder.outerHTML = html;
-                        document.dispatchEvent(new CustomEvent('chunk:loaded', {
-                            detail: { chunk: chunkName }
-                        }));
-                    })
-                    .catch(function () {
-                        placeholder.removeAttribute('data-chunk');
-                        document.dispatchEvent(new CustomEvent('chunk:error', {
-                            detail: { chunk: chunkName }
-                        }));
-                    });
-            });
-        });
-
-        observer.observe(placeholder);
-    })();
-</script>
+<template data-chunk-marker></template>
+{% if fallback is defined and fallback %}
+	{{ fallback|raw }}
+{% endif %}
+{% do assets.addJs('plugin://twig-chunks/js/twig-chunks.js', 1) %}
+ <script>(function(script) {
+    document.addEventListener('twig-chunks:ready', function() {
+        initTwigChunk('{{ chunk|e('js') }}', {{ params|default({})|json_encode|raw }}, script);
+    }, { once: true });
+})(document.currentScript);</script>

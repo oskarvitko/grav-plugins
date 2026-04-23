@@ -15,7 +15,7 @@ class TwigChunksPlugin extends Plugin
                 ['onPluginsInitialized', 0],
             ],
             'onTwigTemplatePaths' => ['onTwigTemplatePaths', 0],
-            'onTwigInitialized' => ['onTwigInitialized', 0],
+            'onPagesInitialized' => ['onPagesInitialized', 0],
         ];
     }
 
@@ -37,7 +37,7 @@ class TwigChunksPlugin extends Plugin
         $this->grav['twig']->twig_paths[] = __DIR__ . '/templates';
     }
 
-    public function onTwigInitialized(): void
+    public function onPagesInitialized(): void
     {
         if ($this->isAdmin()) {
             return;
@@ -63,7 +63,6 @@ class TwigChunksPlugin extends Plugin
         $chunksDir = $this->grav['locator']->findResource('theme://') . '/templates/chunks';
         $file = $chunksDir . '/' . $chunkName . '.html.twig';
 
-        // Ensure resolved path stays within chunks directory (path traversal guard)
         if (strpos(realpath($file) ?: '', realpath($chunksDir)) !== 0) {
             return null;
         }
@@ -95,8 +94,11 @@ class TwigChunksPlugin extends Plugin
 
     private function handleChunkRoute(string $chunkName): void
     {
-        if (($_SERVER['HTTP_X_CHUNK_REQUEST'] ?? '') !== '1') {
-            return;
+        $isDebug = $this->grav['config']->get('system.debugger.enabled');
+
+        if (($_SERVER['HTTP_X_CHUNK_REQUEST'] ?? '') !== '1' && !$isDebug) {
+            http_response_code(403);
+            exit;
         }
 
         $chunk = $this->loadChunk($chunkName);
@@ -108,24 +110,25 @@ class TwigChunksPlugin extends Plugin
 
         $grav = $this->grav;
         $twig = $grav['twig'];
-        $page = $grav['page'];
-        $pages = $grav['pages'];
         $config = $grav['config'];
-        $uri = $grav['uri'];
-        $theme = $grav['themes'];
         $themeName = $config->get('system.pages.theme');
 
-        $context = [
-            'grav' => $grav,
-            'config' => $config,
-            'uri' => $uri,
-            'pages' => $pages,
-            'page' => $page,
-            'theme' => $theme,
-            'theme_config' => $config->get('themes.' . $themeName),
+        $rawParams = $grav['uri']->query('params');
+        $params = [];
+        if ($rawParams) {
+            $decoded = json_decode($rawParams, true);
+            if (is_array($decoded)) {
+                $params = $decoded;
+            }
+        }
+
+        // Start with all vars Grav normally provides to Twig templates,
+        // then add/override with chunk-specific ones
+        $context = array_merge($twig->twig_vars, $params, [
             'chunk_meta' => $chunk['meta'],
+            'theme_config' => $config->get('themes.' . $themeName),
             'ajax' => true,
-        ];
+        ]);
 
         if (empty($chunk['meta']['chunk'])) {
             http_response_code(500);
@@ -138,7 +141,19 @@ class TwigChunksPlugin extends Plugin
         header('Last-Modified: ' . gmdate('D, d M Y H:i:s', filemtime($chunk['file'])) . ' GMT');
 
         try {
-            echo $twig->processTemplate($chunk['meta']['chunk'], $context);
+            $html = $twig->processTemplate($chunk['meta']['chunk'], $context);
+
+            $plugins = $grav['plugins'];
+            /** @var HTMLMinifierPlugin $minifyPlugin */
+            $minifyPlugin = $plugins->getPlugin('html-minifier');
+            if ($minifyPlugin && $minifyPlugin->active) {
+                if (!class_exists(\WyriHaximus\HtmlCompress\Factory::class)) {
+                    require_once __DIR__ . '/../html-minifier/vendor/autoload.php';
+                }
+                $html = \WyriHaximus\HtmlCompress\Factory::constructFastest()->compress($html);
+            }
+
+            echo $html;
         } catch (\Exception $e) {
             http_response_code(500);
         }

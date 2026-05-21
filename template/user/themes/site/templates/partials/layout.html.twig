@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="{{ (grav.language.getActive ?: grav.config.site.default_lang)|e }}">
+    <head>
+        {% block head %}
+            <meta charset="utf-8"/>
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            {% include 'partials/metadata.html.twig' %}
+            {% set title_parts = [header.title, site.title] %}
+            <title>{{ title_parts|filter(v => v)|join(' | ') }}</title>
+
+            {% set icon = theme.icon|first %}
+            {% if icon is defined %}
+                <link rel="icon" type="{{ icon.type }}" href="{{ asset_path(icon.path) }}"/>
+            {% endif %}
+
+            <link rel="canonical" href={% block canonical %}"{{ page.canonical(true)|e }}"{% endblock %}/>
+        {% endblock head %}
+
+        {% block preload %}
+        {% endblock %}
+
+        {% block stylesheets %}
+            {% do assets.addCss('theme://css/index.css', 98) %}
+        {% endblock %}
+
+        {% block javascripts %}
+            {% do assets.addJs('theme://js/index.js', {group:'bottom',  attributes: { type: 'module' }}) %}
+        {% endblock %}
+
+        {% block assets deferred %}
+        {{ assets.css()|raw }}
+        {% endblock %}
+
+        {% include "partials/tags.html.twig" %}
+    </head>
+    <body>
+        {% include "partials/tags.html.twig" with { noscript: true } %}
+
+        {% block header %}
+            {% include "partials/header/header.html.twig" %}
+        {% endblock %}
+
+        {% block body %}
+            OVERRIDE BODY
+        {% endblock %}
+
+        {% block footer %}
+            {% include "partials/footer/footer.html.twig" %}
+        {% endblock %}
+
+        {% block bottom %}
+            {{ assets.js()|raw }}
+        {% endblock %}
+    </body>
+</html>

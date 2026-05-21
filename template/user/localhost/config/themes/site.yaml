@@ -1,0 +1,10 @@
+enabled: true
+dropdown:
+  enabled: true
+icon:
+  user/themes/site/images/favicon/logo.png:
+    name: logo.png
+    full_path: logo.png
+    type: image/png
+    size: 8714
+    path: user/themes/site/images/favicon/logo.png

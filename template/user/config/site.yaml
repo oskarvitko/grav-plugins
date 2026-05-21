@@ -1,0 +1,18 @@
+title: 'НАЗВАНИЕ САЙТА'
+default_lang: ru
+author:
+  name: Oskar
+  email: oskarvitko16@gmail.com
+taxonomies: null
+metadata:
+  description: 'ИЗМЕНИТЬ МЕТА ОПИСАНИЕ'
+  robots: 'noindex, nofollow'
+summary:
+  enabled: false
+  format: short
+  size: 300
+  delimiter: '==='
+redirects: null
+routes: null
+blog:
+  route: /blog

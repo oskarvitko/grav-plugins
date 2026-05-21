@@ -169,6 +169,10 @@ class ProductCatalogPlugin extends Plugin
                     $baseMetadata = $page->metadata();
 
                     foreach ($metadata as $key => $value) {
+                        if ($key === 'title') {
+                            $page->header()->title = $value;
+                        }
+
                         $metadata[$key] = [
                             'name' => $key,
                             'content' => $value

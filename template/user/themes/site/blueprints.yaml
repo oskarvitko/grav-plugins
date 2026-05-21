@@ -1,0 +1,30 @@
+name: Site
+slug: site
+type: theme
+version: 0.1.0
+description: Site Theme
+icon: rebel
+author:
+  name: developer
+  email: developer@gmail.com
+homepage: https://github.com/developer/grav-theme-site
+demo: http://demo.yoursite.com
+keywords: grav, theme, etc
+bugs: https://github.com/developer/grav-theme-site/issues
+readme: https://github.com/developer/grav-theme-site/blob/develop/README.md
+license: MIT
+
+dependencies:
+  - { name: grav, version: '>=1.6.0' }
+
+form:
+  validation: loose
+  fields:
+    icon:
+      type: file
+      label: Favicon
+      destination: 'user/themes/site/images/favicon'
+      multiple: false
+      random_name: false
+      accept:
+        - image/*

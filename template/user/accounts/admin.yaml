@@ -1,0 +1,16 @@
+state: enabled
+email: admin@gmail.com
+fullname: Admin
+title: Administrator
+hashed_password: $2y$10$K8TdxnuNsCY7hHeMrayRReryuS7Zs9ItDfrMXs5pKH7zW4is3kiNa
+language: ru
+content_editor: default
+twofa_enabled: false
+twofa_secret: PHMVV52F52F4AFFKY6Q6VFMERNPOTMJ5
+avatar: {  }
+access:
+  site:
+    login: true
+  admin:
+    login: true
+    super: true

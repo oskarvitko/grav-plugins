@@ -1,2 +1,10 @@
 enabled: true
-parent_accepted: 1
+product_parent_accepted: 1
+product_types:
+  - key: product
+    name: Товар
+    params: {}
+category_enabled: false
+category_parent_accepted: false
+extra_product_enabled: false
+review_enabled: false

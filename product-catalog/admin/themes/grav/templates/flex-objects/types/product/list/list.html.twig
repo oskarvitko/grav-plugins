@@ -1,11 +1,10 @@
 {% set filters = {
-    product_type: grav.uri.query('status') ?: 'teplica',
+    product_type: grav.uri.query('status') ?: product_types|keys|first,
     search: grav.uri.query('search') ?: '',
     sort_key: grav.uri.query('sort_key') ?: directory_config.order.by,
     sort_dir: grav.uri.query('sort_dir') ?: directory_config.order.dir,
 	page: grav.uri.query('page')|int ?: 1,
 } %}
-
 
 {% set filtered_collection = collection
 	.byType(filters.product_type)
@@ -134,12 +133,12 @@
 </script>
 
 <div class="dir-filters">
-	{% if view_config.entry_types is defined %}
+	{% if product_types is defined %}
 		<form method="get" class="dir-filters-select">
 			<label for="filter-product-type" style="white-space: nowrap;">Тип товара</label>
 
 			<select id="filter-product-type" name="status" onchange="this.form.submit()">
-				{% for key, label in view_config.entry_types %}
+				{% for key, label in product_types|merge({ 'undefined': "Другое" }) %}
 					<option value="{{ key }}" {{ filters.product_type == key ? 'selected' : '' }}>{{ label }}</option>
 				{% endfor %}
 			</select>

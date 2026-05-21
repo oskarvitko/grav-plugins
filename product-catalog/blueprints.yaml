@@ -35,6 +35,21 @@ form:
         title: Товары
         underline: true
         fields:
+            product_types:
+                type: list
+                label: Типы товаров
+                fields:
+                  .key:
+                    type: text
+                    label: Ключ
+                  .name:
+                    type: text
+                    label: Названиe
+                  .params:
+                    type: array
+                    label: Параметры
+                    outerclasses: array-horizontal
+
             product_parent_accepted:
                 type: toggle
                 label: Родительская включена

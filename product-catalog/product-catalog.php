@@ -17,6 +17,7 @@ use Grav\Plugin\FlexObjects\Flex;
 use Grav\Plugin\ProductCatalog\Flex\Types\Product\ProductCollection;
 use Grav\Plugin\ProductCatalog\Flex\Types\Product\ProductObject;
 use Monolog\Logger;
+use Twig\TwigFunction;
 
 /**
  * Class ProductCatalogPlugin
@@ -68,6 +69,7 @@ class ProductCatalogPlugin extends Plugin
             $this->enable([
                 'onAssetsInitialized' => ['onAssetsInitialized', 0],
                 'onAdminTwigTemplatePaths' => ['onAdminTwigTemplatePaths', 0],
+                'onTwigSiteVariables' => ['onTwigSiteVariables', 0],
             ]);
 
             return;
@@ -76,6 +78,7 @@ class ProductCatalogPlugin extends Plugin
         $this->enable([
             'onPageInitialized' => ['onPageInitialized', 0],
             'onSitemapProcessed' => ['onSitemapProcessed'],
+            'onTwigSiteVariables' => ['onTwigSiteVariables'],
         ]);
     }
 
@@ -89,6 +92,7 @@ class ProductCatalogPlugin extends Plugin
     public function onAssetsInitialized()
     {
         $this->grav['assets']->addJs('plugins://product-catalog/assets/js/live-slug.js');
+        $this->grav['assets']->addCss('plugins://product-catalog/assets/css/enhanced-fields.css');
     }
 
     protected function handleNotFound($notFoundRoute)
@@ -202,7 +206,7 @@ class ProductCatalogPlugin extends Plugin
 
         $uri = $this->grav['uri'];
         $path = $uri->path();
-        if ($path === $productConfig['render_route']) {
+        if ($path === $productConfig['render_route'] && $path !== $productConfig['parent_route']) {
             return $this->handleNotFound($productConfig['not_found_route']);
         }
 
@@ -294,21 +298,21 @@ class ProductCatalogPlugin extends Plugin
             'blueprints://flex-objects/product.yaml'
         );
 
-        if ($this->getConfig('category')['enabled']) {
+        if ($this->getConfig('category')['enabled'] ?? false) {
             $flex->addDirectoryType(
                 'category',
                 'blueprints://flex-objects/category.yaml'
             );
         }
 
-        if ($this->getConfig('extra_product')['enabled']) {
+        if ($this->getConfig('extra_product')['enabled'] ?? false) {
             $flex->addDirectoryType(
                 'extra-product',
                 'blueprints://flex-objects/extra-product.yaml'
             );
         }
 
-        if ($this->getConfig('review')['enabled']) {
+        if ($this->getConfig('review')['enabled'] ?? false) {
             $flex->addDirectoryType(
                 'review',
                 'blueprints://flex-objects/review.yaml'
@@ -331,5 +335,70 @@ class ProductCatalogPlugin extends Plugin
         }
 
         return $result;
+    }
+
+
+    public static function getProductTypes($mode = 'name')
+    {
+        $productTypes = Grav::instance()['config']->get('plugins.product-catalog.product_types') ?? [];
+        return ProductCatalogPlugin::getProductTypesMap($productTypes, $mode);
+    }
+
+    public static function getProductTypeParams($type)
+    {
+        if ($type === '__type-param__') {
+            $grav = Grav::instance();
+            $path = $grav['uri']->path();
+            $id = basename(rtrim($path, '/'));
+
+            /** @var Flex $flex */
+            $flex = $grav['flex_objects'];
+            $directory = $flex->getDirectory('product');
+            $item = $directory->getCollection()->get($id);
+
+            if ($item) {
+                $type = $item->getProperty('type');
+                return ProductCatalogPlugin::getProductTypeParams($type);
+            }
+
+            return [];
+        }
+
+        $types = ProductCatalogPlugin::getProductTypes('full');
+        return $types[$type]['params'] ?? [];
+    }
+
+    public static function getProductTypesMap($types, $mode = 'name')
+    {
+        $productTypes = [];
+        foreach ($types as $type) {
+            $productTypes[$type['key']] = $mode === 'name' ? $type['name'] : $type;
+        }
+
+        return $productTypes;
+    }
+
+    public function p_type(array $context, $type = 'product')
+    {
+        return $context['product_type'] === $type;
+    }
+
+    public function onTwigSiteVariables(): void
+    {
+        /** @var Twig $twig */
+        $twig = $this->grav['twig'];
+
+        $config = $this->getConfig("product");
+
+        $productTypes = $config['types'];
+
+        $twig->twig_vars['product_types_full'] = $this->getProductTypesMap($productTypes, 'full');
+        $twig->twig_vars['product_types'] = $this->getProductTypesMap($productTypes);
+
+        $twig->twig()->addFunction(
+            new TwigFunction('p_type', [$this, 'p_type'], [
+                'needs_context' => true,
+            ])
+        );
     }
 }

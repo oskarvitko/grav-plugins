@@ -168,15 +168,19 @@ class FilterCriteria
                 (string) $operatorValue
             ),
 
-            'isNull' => fn($item): bool => $this->readFieldMeta($item, $field)['exists']
-            && $this->readFieldMeta($item, $field)['value'] === null,
+            'isNull' => function ($item) use ($field): bool {
+                    $meta = $this->readFieldMeta($item, $field);
+                    return $meta['exists'] && $meta['value'] === null;
+                },
 
             'notNull' => fn($item): bool => $this->readFieldMeta($item, $field)['value'] !== null,
 
             'isMissing' => fn($item): bool => !$this->readFieldMeta($item, $field)['exists'],
 
-            'isMissingOrNull' => fn($item): bool => !$this->readFieldMeta($item, $field)['exists']
-            || $this->readFieldMeta($item, $field)['value'] === null,
+            'isMissingOrNull' => function ($item) use ($field): bool {
+                    $meta = $this->readFieldMeta($item, $field);
+                    return !$meta['exists'] || $meta['value'] === null;
+                },
 
             'memberOf' => fn($item): bool => $this->memberOf(
                 $this->readFieldMeta($item, $field)['value'],

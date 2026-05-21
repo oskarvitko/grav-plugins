@@ -14,6 +14,7 @@ namespace Grav\Plugin\ProductCatalog\Flex\Types\Product;
 use Grav\Common\Flex\Types\Generic\GenericObject;
 use Grav\Common\Grav;
 use Grav\Common\Plugins;
+use Grav\Plugin\ProductCatalogPlugin;
 use Grav\Plugin\ProductCatalogPricesPlugin;
 
 /**
@@ -24,19 +25,76 @@ use Grav\Plugin\ProductCatalogPricesPlugin;
  */
 class ProductObject extends GenericObject
 {
+    public function getVariantsPrice()
+    {
+        $variants = $this->getProperty('variants');
+
+        if (!$variants) {
+            return [];
+        }
+
+        $params = ProductCatalogPlugin::getProductTypeParams($this->getProperty('type'));
+        $paramKeys = array_keys($params);
+
+        $result = [];
+
+        foreach ($variants as $variant) {
+            $path = [];
+
+            foreach ($variant['params'] ?? [] as $param) {
+                $paramIndex = array_search($param['param'], $paramKeys);
+                $path[$paramIndex] = $param['value'];
+            }
+
+            $result[implode('-', $path)] = $variant['price'];
+        }
+
+        return $result;
+    }
+
+    public function getParams()
+    {
+        $variants = $this->getProperty('variants');
+
+        if (!$variants) {
+            return [];
+        }
+
+        $params = [];
+
+        foreach ($variants as $variant) {
+            foreach ($variant['params'] ?? [] as $param) {
+                $key = $param['param'];
+                $value = $param['value'];
+
+                if (!array_key_exists($key, $params)) {
+                    $params[$key] = [];
+                }
+
+                if (!in_array($value, $params[$key])) {
+                    array_push($params[$key], $value);
+                }
+            }
+        }
+
+        return $params;
+    }
+
     public function getCategory()
     {
         $grav = Grav::instance();
         if ($grav['config']['plugins']['product-catalog']['category_enabled']) {
             $categories = $this->getProperty('category');
-            $category = null;
 
             if (isset($categories) && is_array($categories)) {
                 $categoryId = end($categories);
                 if ($categoryId) {
-                    $category = $grav['flex_objects']->getCollection('category')->get($categoryId);
+                    $directory = $grav['flex_objects']->getDirectory('category');
+                    if (!$directory) {
+                        return null;
+                    }
 
-                    return $category;
+                    return $directory->getCollection()->get($categoryId);
                 }
             }
         }

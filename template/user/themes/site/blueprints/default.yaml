@@ -1,0 +1,18 @@
+extends@: default
+
+form:
+  fields:
+    tabs:
+      type: tabs
+      active: 1
+
+      fields:
+        content:
+          fields:
+            header.content.blocks:
+              type: select
+              label: Блоки
+              multiple: true
+              data-options@: '\Grav\Theme\Site::getPartials'
+              validate:
+                type: array

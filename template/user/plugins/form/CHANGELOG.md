@@ -1,3 +1,22 @@
+# v9.1.6
+## 06/18/2026
+
+1. [](#bugfix)
+    * Failing a captcha (or any other validation error) no longer blocks you from correcting the form and resubmitting when refresh prevention is enabled.
+    * Custom captcha failure messages set with the older `recaptcha_not_validated` key work again alongside the current `captcha_not_validated` key.
+
+# v9.1.5
+## 06/08/2026
+
+1. [](#bugfix)
+    * Fixed a typo in the form data email template that referenced a non-existent `emarkdown` filter, which on Grav 2.0 could cause form notification emails to arrive with the raw `{% include %}` tag in the body instead of the submitted data.
+
+# v9.1.4
+## 05/29/2026
+
+1. [](#bugfix)
+    * **FilePond previews for files whose names contain `#` or `?` no longer 404.** The `image_url` and `thumb_url` returned by the upload handler now percent-encode those characters in the path so the browser doesn't treat them as fragment/query delimiters.
+
 # v9.1.3
 ## 05/06/2026
 

@@ -7,6 +7,40 @@ use Twig\TwigFunction;
 
 class Site extends Theme
 {
+    public static function getPartials(): array
+    {
+        $partialsDir = __DIR__ . '/templates/partials';
+        $result = [];
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($partialsDir, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $file) {
+            $filename = $file->getFilename();
+            if (!str_ends_with($filename, '.html.twig')) {
+                continue;
+            }
+
+            $relativePath = 'partials/' . str_replace('\\', '/', substr($file->getPathname(), strlen($partialsDir) + 1));
+
+            $inner = substr($relativePath, strlen('partials/'));
+            $parts = explode('/', $inner);
+
+            $nameParts = [];
+            foreach ($parts as $index => $part) {
+                if ($index === count($parts) - 1) {
+                    $part = substr($part, 0, -strlen('.html.twig'));
+                }
+                $nameParts[] = ucwords(str_replace(['-', '_'], ' ', $part));
+            }
+
+            $result[$relativePath] = implode(' ', $nameParts);
+        }
+
+        return $result;
+    }
+
     public static function getSubscribedEvents(): array
     {
         return [

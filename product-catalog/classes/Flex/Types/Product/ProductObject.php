@@ -137,8 +137,10 @@ class ProductObject extends GenericObject
                 $priceInfo = $priceList[$itemKey];
 
                 if ($priceInfo) {
-                    foreach ($priceInfo as $path => $price) {
-                        $this->setNestedProperty($path, $price, $pricePlugin->pathSeparator);
+                    foreach ($priceInfo as $path => $prices) {
+                        if (count($prices)) {
+                            $this->setNestedProperty($path, $prices[0], $pricePlugin->pathSeparator);
+                        }
                     }
                 }
             }

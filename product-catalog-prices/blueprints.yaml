@@ -41,6 +41,11 @@ form:
       min: 0
       label: Cache time
       prepend: min
+    price_key:
+      type: array
+      value_only: true
+      label: Price Keys
+      required: true
     collections:
       type: list
       style: vertical
@@ -53,5 +58,5 @@ form:
           .paths:
               type: array
               label: Propery path
-              placeholder_value: price_rb
-              placeholder_key: versions.value.price
+              value_only: true
+              placeholder_value: versions.value.price

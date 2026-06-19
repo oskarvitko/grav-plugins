@@ -107,7 +107,7 @@ class ProductCatalogPricesPlugin extends Plugin
             $items = $directory->getCollection();
 
             foreach ($items as $item) {
-                foreach ($configuration['paths'] as $pricePath => $priceKey) {
+                foreach ($configuration['paths'] as $pricePath) {
                     $prices = $this->getPriceId($item, $pricePath);
                     $allPrices = array_merge($allPrices, $prices);
                 }
@@ -135,10 +135,11 @@ class ProductCatalogPricesPlugin extends Plugin
         }
 
         $apiUrl = $this->config->get('plugins.product-catalog-prices.api_url');
-        $cacheTime = $this->config->get('plugins.product-catalog-prices.cache_time') || 120;
+        $cacheTime = $this->config->get('plugins.product-catalog-prices.cache_time') ?? 120;
         /** @var Cache $cache */
         $cache = $this->grav['cache'];
-        $priceKey = 'price_rb';
+        /** @var array<string> $priceKeys */
+        $priceKeys = $this->config->get('plugins.product-catalog-prices.price_key') ?? [];
 
         $cached = $cache->fetch($this->cacheKey);
 
@@ -181,7 +182,13 @@ class ProductCatalogPricesPlugin extends Plugin
                     $result[$itemId] = [];
                 }
 
-                $result[$itemId][$propertyPath] = $product[$priceKey];
+                $result[$itemId][$propertyPath] = [];
+
+                foreach ($priceKeys as $index => $priceKey) {
+                    if (array_key_exists($priceKey, $product)) {
+                        $result[$itemId][$propertyPath][$index] = $product[$priceKey];
+                    }
+                }
             }
         }
 

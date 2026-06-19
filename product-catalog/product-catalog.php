@@ -391,7 +391,7 @@ class ProductCatalogPlugin extends Plugin
     {
         /** @var Twig $twig */
         $twig = $this->grav['twig'];
-
+        $flex = $this->grav['flex_objects'];
         $config = $this->getConfig("product");
 
         $productTypes = $config['types'];
@@ -404,5 +404,18 @@ class ProductCatalogPlugin extends Plugin
                 'needs_context' => true,
             ])
         );
+
+        $twig->twig()->addFunction(new TwigFunction('getProducts', static function () use ($flex) {
+            $directory = $flex->getDirectory('product');
+            /** @var ProductObject[] $items */
+            $products = $directory->getCollection()->filterBy([
+                'or' => [
+                    ['published' => ['isMissingOrNull' => true]],
+                    ['published' => '1']
+                ]
+            ])->sort(['order' => 'DESC']);
+
+            return $products->applyPrice();
+        }));
     }
 }
